@@ -1,0 +1,102 @@
+---
+title: "ChristophBlappExercise5"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+##Question 1
+```{r}
+setwd("C:/Users/chris/Desktop")
+load("C:/Users/chris/Desktop/countResult1.RData")
+load("C:/Users/chris/Desktop/countResult2.RData")
+sum(countResult2$counts)-sum(countResult1$counts)
+```
+```{r}
+(sum(countResult2$counts)-sum(countResult1$counts))/sum(countResult2$counts)
+```
+
+Roughly 1 percent of the alignments was removed when only unambigious ones were included.
+
+##Question 2
+```{r}
+N1.genes <- read.delim("C:/Users/chris/Desktop/RSEM_counts/N1.genes.results")
+a<- cbind(countResult1$annotation$GeneID,countResult1$counts[,1]/countResult1$annotation$Length)
+a<-data.frame(a)
+a<-with(a,a[order(a$X1),])
+n<-sum(countResult1$counts[,1]*countResult1$annotation$Length)/sum(countResult1$counts[,1])
+a$X2<-as.numeric(as.character(a$X2))
+a$X2<-a$X2/sum(countResult1$counts[,1])*100000/n
+dif<-a$X2-N1.genes$TPM
+dif2<-data.frame(N1.genes$gene_id)
+dif2$c<-dif
+hist(dif,breaks = 30)
+```
+That most of the expression differences are around 0 is what I would expect, which gives my confidence in my calculations to get the tpm. Having all values on the same side of Zero also makes sense.
+```{r}
+dif2<-dif2[dif2$c<=-10000,]
+dif2$N1.genes.gene_id
+```
+I randomly checked some of these genes and they seem to be ribosomal or ion binding proteins. Counts of such basic workhorses probably arent really the most interesting transcriptome feature, so it seems reasonable to pull them out of the RSEM results.
+
+Now for the fractioned count:
+```{r}
+a<- cbind(countResult2$annotation$GeneID,countResult2$counts[,1]/countResult2$annotation$Length)
+a<-data.frame(a)
+a<-with(a,a[order(a$X1),])
+n<-sum(countResult2$counts[,1]*countResult2$annotation$Length)/sum(countResult2$counts[,1])
+a$X2<-as.numeric(as.character(a$X2))
+a$X2<-a$X2/sum(countResult2$counts[,1])*100000/n
+dif<-a$X2-N1.genes$TPM
+dif3<-data.frame(N1.genes$gene_id)
+dif3$c<-dif
+hist(dif,breaks = 30)
+
+```
+
+```{r}
+dif3<-dif3[dif3$c<=-10000,]
+dif3$N1.genes.gene_id
+```
+```{r}
+all.equal(dif2,dif3)
+```
+No change here. I am a bit surprised actually given how many alignments there should be for rRNA. I guess having only the first chromosome is the cause for this oddity.
+
+##Question 3
+```{r}
+c(sum(N1.genes$posterior_mean_count),sum(countResult1$counts[,1]),sum(countResult2$counts[,1]))
+```
+That seems in line with the Observations from 2. I am surprised that the 8 genes account for nearly 10% of the count, but I guess nucleoli are thing for a reason.
+
+##Question 4
+```{r}
+la<-list.files(path = "./RSEM_counts/",pattern = "*.results")
+files<-lapply(la, function(x) read.delim(paste("C:/Users/chris/Desktop/RSEM_counts",x,sep = "/")))
+da<-files[[1]]$TPM
+da<-cbind(da,files[[3]]$TPM)
+da<-cbind(da,files[[5]]$TPM)
+da<-cbind(da,files[[7]]$TPM)
+da<-cbind(da,files[[9]]$TPM)
+da<-cbind(da,files[[11]]$TPM)
+cor(da)
+```
+These are the genes.
+The three treatments and controlls correlate stronger within theri group than with the other group
+```{r}
+da2<-files[[2]]$TPM
+da2<-cbind(da2,files[[4]]$TPM)
+da2<-cbind(da2,files[[6]]$TPM)
+da2<-cbind(da2,files[[8]]$TPM)
+da2<-cbind(da2,files[[10]]$TPM)
+da2<-cbind(da2,files[[12]]$TPM)
+cor(da2)
+```
+And these are the isoforms. They look similar, but lets take a closer look.
+```{r}
+cor(da)-cor(da2)
+```
+T3 seems to shown a bigger correlation difference btween gens and iso with the opposite group than any other combination , but otherwise nothing stands out.
+
+
